@@ -22,6 +22,8 @@
     <property name="fileCount" display-name-key="File_Count_Display_Key" description-key="File_Count_Desc_Key" of-type="Whole.None" usage="output" required="false" />
     <property name="files" display-name-key="Files_Display_Key" description-key="Files_Desc_Key" of-type="SingleLine.Text" usage="output" required="false" />
      <property name="active" display-name-key="Active_Display_Key" description-key="Active_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
+     <property name="ChooseFIleActive" display-name-key="ChooseFIleActive_Display_Key" description-key="ChooseFIleActive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
+     <property name="DragAndDropActive" display-name-key="DragAndDropActive_Display_Key" description-key="DragAndDropActive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
     <property name="deactive" display-name-key="Deactive_Display_Key" description-key="Deactive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
    <property name="numericValue"   display-name-key="Numeric_Value_Display_Key"  description-key="Numeric_Value_Desc_Key"  of-type="Whole.None"  usage="bound" required="true" />
   
