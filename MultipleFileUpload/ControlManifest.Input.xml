@@ -18,16 +18,18 @@
       -->
     </external-service-usage>
     <!-- property node identifies a specific, configurable piece of data that the control expects from CDS -->
-    <property name="sampleProperty" display-name-key="Property_Display_Key" description-key="Property_Desc_Key" of-type="SingleLine.Text" usage="bound" required="true" />
-    <property name="fileCount" display-name-key="File_Count_Display_Key" description-key="File_Count_Desc_Key" of-type="Whole.None" usage="output" required="false" />
-    <property name="files" display-name-key="Files_Display_Key" description-key="Files_Desc_Key" of-type="SingleLine.Text" usage="output" required="false" />
-     <property name="active" display-name-key="Active_Display_Key" description-key="Active_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
-     <property name="ChooseFIleActive" display-name-key="ChooseFIleActive_Display_Key" description-key="ChooseFIleActive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
+     <property name="fileCount" display-name-key="File_Count_Display_Key" description-key="File_Count_Desc_Key" of-type="Whole.None" usage="output" required="false" />
+     <property name="files" display-name-key="Files_Display_Key" description-key="Files_Desc_Key" of-type="SingleLine.Text" usage="output" required="false" />
+     <property name="ChooseFileActive" display-name-key="ChooseFileActive_Display_Key" description-key="ChooseFileActive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
      <property name="DragAndDropActive" display-name-key="DragAndDropActive_Display_Key" description-key="DragAndDropActive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
-    <property name="deactive" display-name-key="Deactive_Display_Key" description-key="Deactive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
-   <property name="numericValue"   display-name-key="Numeric_Value_Display_Key"  description-key="Numeric_Value_Desc_Key"  of-type="Whole.None"  usage="bound" required="true" />
-  
-    <!--
+     <property name="fileRangeValue"   display-name-key="FileRangeValue_Display_Key"  description-key="FileRangeValue_Desc_Key"  of-type="Whole.None"  usage="bound" required="true" />
+     <property name="AllowMultipleFiles" display-name-key="AllowMultipleFiles_Select_Key" description-key="AllowMultipleFiles_Select_Description" of-type="TwoOptions" usage="bound" required="true"/>
+     <property name="pdfFileFormateActive" display-name-key="pdfFileActiveActive_Display_Key" description-key="pdfFileActiveActive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
+     <property name="imageFileFormateActive" display-name-key="imageFileFormateActive_Display_Key" description-key="imageFileFormateActive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
+     <property name="wordFileFormateActive" display-name-key="wordFileFormateActive_Display_Key" description-key="wordFileFormateActive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
+     <property name="pptFileFormateActive" display-name-key="pptFileFormateActive_Display_Key" description-key="pptFileFormateActive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
+     <property name="excelFileFormateActive" display-name-key="excelFileFormateActive_Display_Key" description-key="excelFileFormateActive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
+      <!--
       Property node's of-type attribute can be of-type-group attribute.
       Example:
       <type-group name="numbers">

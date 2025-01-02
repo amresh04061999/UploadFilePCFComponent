@@ -11,6 +11,9 @@ export class MultipleFileUpload
   private _chooseFileButton: HTMLButtonElement;
   private _dropZoneContainer: HTMLDivElement;
   private mainContainer: HTMLDivElement;
+  private paragraph: HTMLDivElement;
+  private _fileInput: HTMLInputElement;
+  private _dropdown: HTMLSelectElement;
   private _files: {
     name: string;
     content: string;
@@ -20,6 +23,7 @@ export class MultipleFileUpload
   private _errorMessage: HTMLDivElement; // Error message element
   private _fileNamesContainer: HTMLDivElement; // Container for file names
   private _context: ComponentFramework.Context<IInputs>;
+  private _currentValue: string[];
   constructor() {}
   public init(
     context: ComponentFramework.Context<IInputs>,
@@ -30,17 +34,11 @@ export class MultipleFileUpload
     this._container = container;
     this._notifyOutputChanged = notifyOutputChanged;
     this._context = context;
+    this._currentValue = this._currentValue || [];
     this._maxFiles =
-      this._context.parameters.numericValue?.raw !== null
-        ? this._context.parameters.numericValue.raw
+      this._context.parameters.fileRangeValue?.raw !== null
+        ? this._context.parameters.fileRangeValue.raw
         : 0;
-
-    const isActive = this._context.parameters.active.raw !== false;
-    const isDeactive = this._context.parameters.deactive?.raw === true;
-    if (!isActive || isDeactive) {
-      this._container.innerHTML = "<div>The component is inactive.</div>";
-      return;
-    }
     // Load external stylesheets and set up file upload UI
     const link = document.createElement("link");
     link.rel = "stylesheet";
@@ -48,6 +46,7 @@ export class MultipleFileUpload
       "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css";
     document.head.appendChild(link);
 
+  
     //    main div
     this.mainContainer = document.createElement("div");
     this.mainContainer.className = "upload-container";
@@ -57,16 +56,16 @@ export class MultipleFileUpload
     uploadHeader.className = "upload-header";
     const title = document.createElement("h2");
     title.innerText = `Upload and attach files`;
-    const paragraph = document.createElement("p");
+    this.paragraph = document.createElement("p");
     const maximumFiles = document.createElement("p");
     maximumFiles.className = "maxFile";
-    paragraph.innerText = `Supported formats:Pdf`;
+
     // const SaveButton = document.createElement("button");
     // SaveButton.innerText="saveFile"
-    maximumFiles.innerText = `You can upload Maximum ${this._maxFiles} PDF files.`;
+    maximumFiles.innerText = `You can upload Maximum ${this._maxFiles} files.`;
     uploadHeader.appendChild(title);
     uploadHeader.appendChild(maximumFiles);
-    uploadHeader.appendChild(paragraph);
+    uploadHeader.appendChild(this.paragraph);
     // uploadHeader.appendChild(SaveButton);
     this.mainContainer.appendChild(uploadHeader);
     this._errorMessage = document.createElement("div");
@@ -97,14 +96,14 @@ export class MultipleFileUpload
     containerDragDrop.appendChild(setHeadingDropZone1);
     dropZone.appendChild(containerDragDrop);
     setHeadingDropZone.addEventListener("click", () => {
-      fileInput.click();
+      this._fileInput.click();
     });
     // Create the file input element for selecting files
-    const fileInput = document.createElement("input");
-    fileInput.type = "file";
-    fileInput.accept = ".pdf";
-    fileInput.multiple = true;
-    fileInput.style.display = "none";
+    this._fileInput = document.createElement("input");
+    this._fileInput.type = "file";
+    // this._fileInput.accept=this._currentValue;
+    this._fileInput.style.display = "none";
+    console.log("This is current value", this._currentValue);
 
     // Create the "Choose Files" button
     this._chooseFileButton = document.createElement("button");
@@ -113,7 +112,7 @@ export class MultipleFileUpload
     this._chooseFileButton.title =
       "Select PDF files to attach. Upload only PDF files.";
     this._chooseFileButton.addEventListener("click", () => {
-      fileInput.click();
+      this._fileInput.click();
     });
 
     // Create container for displaying selected files
@@ -135,15 +134,15 @@ export class MultipleFileUpload
       dropZone.classList.remove("drop-zone-hover");
       const droppedFiles = e.dataTransfer?.files;
       if (droppedFiles) {
-        this.handleFiles(Array.from(droppedFiles), fileInput);
+        this.handleFiles(Array.from(droppedFiles), this._fileInput);
       }
     });
 
     // Handle file selection from the file input
-    fileInput.addEventListener("change", async () => {
-      const selectedFiles = fileInput.files;
+    this._fileInput.addEventListener("change", async () => {
+      const selectedFiles = this._fileInput.files;
       if (selectedFiles) {
-        this.handleFiles(Array.from(selectedFiles), fileInput);
+        this.handleFiles(Array.from(selectedFiles), this._fileInput);
       }
     });
 
@@ -153,7 +152,7 @@ export class MultipleFileUpload
     fileSection.appendChild(this._chooseFileButton);
     this.mainContainer.appendChild(this._errorMessage);
     fileSection.appendChild(this._fileNamesContainer);
-    fileSection.appendChild(fileInput);
+    fileSection.appendChild(this._fileInput);
     this.mainContainer.appendChild(fileSection);
     this._fileSections.push(fileSection);
   }
@@ -171,10 +170,9 @@ export class MultipleFileUpload
       maxFilesExceeded = true;
       filesToAdd = filesToAdd.slice(0, this._maxFiles - this._fileCount);
     }
-
     const fragment = document.createDocumentFragment();
     for (const file of filesToAdd) {
-      if (this.isValidPDF(file)) {
+      if (this.isValidFile(file)) {
         const { base64Content, blobUrl, size } =
           await this.readFileAsBase64AndBlob(file);
         this._files.push({
@@ -189,7 +187,6 @@ export class MultipleFileUpload
         invalidFileSelected = true;
       }
     }
-
     this._fileNamesContainer.appendChild(fragment);
     if (invalidFileSelected) {
       this.showError("Please select only PDF files.");
@@ -198,14 +195,24 @@ export class MultipleFileUpload
     } else {
       this.hideError();
     }
-
     fileInput.value = "";
     this.updateChooseFileButtonState();
     this._notifyOutputChanged();
   }
-
-  private isValidPDF(file: File): boolean {
-    return file.type === "application/pdf";
+  private isValidFile(file: File): boolean {
+    const validTypes = [
+      "application/pdf",                          // .pdf
+      "application/msword",                       // .doc
+      "application/vnd.openxmlformats-officedocument.wordprocessingml.document", // .docx
+      "application/vnd.ms-powerpoint",           // .ppt
+      "application/vnd.openxmlformats-officedocument.presentationml.presentation", // .pptx
+      "application/vnd.ms-excel",                // .xls
+      "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet", // .xlsx
+      "image/jpeg",                               // .jpg, .jpeg
+      "image/png",                                // .png
+      "image/gif",                                // .gif
+    ];
+    return validTypes.includes(file.type);
   }
   private addFileDisplay(
     container: DocumentFragment,
@@ -223,12 +230,6 @@ export class MultipleFileUpload
     fileName.className = "file-name";
     fileName.innerText = `${this.truncateFileName(file.name)}`;
     fileSize.innerText = `${(size / 1024).toFixed(2)} KB`;
-    // fileName.title = `${file.name} - ${size} bytes`;
-    // fileName.href = blobUrl;
-    // fileName.target = "_blank";
-    // fileName.download = file.name;
-    // fileName.style.marginRight = "10px";
-
     fileNameFileSizeContainer.appendChild(fileName);
     fileNameFileSizeContainer.appendChild(fileSize);
     const detailsSection = document.createElement("div");
@@ -291,8 +292,8 @@ export class MultipleFileUpload
     listContainer.appendChild(ActionSection);
     // listContainer.appendChild(progressWrapperContainer)
     fileDisplay.appendChild(listContainer);
-    this._fileNamesContainer.appendChild(fileDisplay)
-    this.mainContainer.appendChild( this._fileNamesContainer);
+    this._fileNamesContainer.appendChild(fileDisplay);
+    this.mainContainer.appendChild(this._fileNamesContainer);
   }
 
   // Single read for both base64 and Blob URL
@@ -337,46 +338,74 @@ export class MultipleFileUpload
 
   public updateView(context: ComponentFramework.Context<IInputs>): void {
     this._context = context;
-    // Access the ChooseFIleActive property value (true or false)
-    const isFileActive = context.parameters.ChooseFIleActive.raw;
-    // Access the ChooseFIleActive property value (true or false)
+    const isFileActive = context.parameters.ChooseFileActive.raw;
     const DragAndDropActive = context.parameters.DragAndDropActive.raw;
 
     // Show or hide the button based on the value of ChooseFIleActive
     if (this._chooseFileButton) {
       if (isFileActive) {
-        // Show the button
         this._chooseFileButton.style.display = "block";
       } else {
-        // Hide the button
         this._chooseFileButton.style.display = "none";
       }
     }
+  
     // Show or hide the button based on the value of ChooseFIleActive
     if (this._dropZoneContainer) {
       if (DragAndDropActive) {
-        // Show the button
         this._dropZoneContainer.style.display = "block";
       } else {
-        // Hide the button
         this._dropZoneContainer.style.display = "none";
       }
     }
-    const isActive = this._context.parameters.active.raw !== false;
-    const isInactive = this._context.parameters.deactive.raw === true;
-    if (!isActive || isInactive) {
-      this._container.innerHTML = "<div>The component is inactive.</div>";
+    const allowMultipleFiles = context.parameters.AllowMultipleFiles.raw;
+    if (this._fileInput) {
+      if (allowMultipleFiles) {
+        this._fileInput.multiple = true;
+      } else {
+        this._fileInput.multiple = false;
+      }
     }
-  }
+    const updateFileSupport = (isActive: boolean, extensions: string[]) => {
+      extensions.forEach((ext) => {
+        if (isActive) {
+          if (!this._currentValue.includes(ext)) {
+            this._currentValue.push(ext); // Add unique extensions
+          }
+        } else {
+          this._currentValue = this._currentValue.filter((item) => item !== ext); // Remove extensions if inactive
+        }
+      });
+    
+      const acceptString = this._currentValue.join(",");
+      this.paragraph.innerText = `Supported Files: ${acceptString}`;
+      this._fileInput.accept = acceptString;
+    };
+    
+    // Dynamically update supported files
+    updateFileSupport(context.parameters.pdfFileFormateActive?.raw, [".pdf"]);
+    updateFileSupport(context.parameters.imageFileFormateActive?.raw, [
+      "image/gif",
+      "image/jpeg",
+      "image/png",
+    ]);
+    updateFileSupport(context.parameters.wordFileFormateActive?.raw, [".doc", ".docx"]);
+    updateFileSupport(context.parameters.pptFileFormateActive?.raw, [".ppt", ".pptx"]);
+    updateFileSupport(context.parameters.excelFileFormateActive?.raw, [".xls", ".xlsx"]);
+    
 
+   
+  }
   public getOutputs(): IOutputs {
     return {
+      // dropdownValue: this._currentValue,
       fileCount: this._fileCount,
       files: JSON.stringify(this._files),
     };
   }
 
   public destroy(): void {
+    this._dropdown.removeEventListener("change", () => {});
     this._fileSections.forEach((section) =>
       this._container.removeChild(section)
     );
