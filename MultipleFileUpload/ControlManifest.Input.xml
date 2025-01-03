@@ -29,6 +29,7 @@
      <property name="wordFileFormateActive" display-name-key="wordFileFormateActive_Display_Key" description-key="wordFileFormateActive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
      <property name="pptFileFormateActive" display-name-key="pptFileFormateActive_Display_Key" description-key="pptFileFormateActive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
      <property name="excelFileFormateActive" display-name-key="excelFileFormateActive_Display_Key" description-key="excelFileFormateActive_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
+     <property name="resetFiles" display-name-key="resetFiles_Display_Key" description-key="resetFiles_Desc_Key" of-type="TwoOptions" usage="bound" required="true" />
       <!--
       Property node's of-type attribute can be of-type-group attribute.
       Example:

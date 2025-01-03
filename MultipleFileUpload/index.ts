@@ -1,5 +1,6 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
+import { constants } from "buffer";
 import { IInputs, IOutputs } from "./generated/ManifestTypes";
-
 export class MultipleFileUpload
   implements ComponentFramework.StandardControl<IInputs, IOutputs>
 {
@@ -12,16 +13,22 @@ export class MultipleFileUpload
   private _dropZoneContainer: HTMLDivElement;
   private mainContainer: HTMLDivElement;
   private paragraph: HTMLDivElement;
+  private fileDisplay: HTMLDivElement;
   private _fileInput: HTMLInputElement;
   private _dropdown: HTMLSelectElement;
+  private resetFiles: boolean = false; 
+  private fragment:DocumentFragment;
+  private _submitButton:HTMLButtonElement;
   private _files: {
     name: string;
     content: string;
     blobUrl: string;
     size: number;
-  }[] = []; // Store files with blobUrl and size
-  private _errorMessage: HTMLDivElement; // Error message element
-  private _fileNamesContainer: HTMLDivElement; // Container for file names
+  }[] = [];
+
+  
+  private _errorMessage: HTMLDivElement;
+  private _fileNamesContainer: HTMLDivElement; 
   private _context: ComponentFramework.Context<IInputs>;
   private _currentValue: string[];
   constructor() {}
@@ -39,15 +46,13 @@ export class MultipleFileUpload
       this._context.parameters.fileRangeValue?.raw !== null
         ? this._context.parameters.fileRangeValue.raw
         : 0;
-    // Load external stylesheets and set up file upload UI
     const link = document.createElement("link");
     link.rel = "stylesheet";
     link.href =
       "https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css";
     document.head.appendChild(link);
-
-  
-    //    main div
+    
+    //main div
     this.mainContainer = document.createElement("div");
     this.mainContainer.className = "upload-container";
     this._container.appendChild(this.mainContainer);
@@ -103,7 +108,6 @@ export class MultipleFileUpload
     this._fileInput.type = "file";
     // this._fileInput.accept=this._currentValue;
     this._fileInput.style.display = "none";
-    console.log("This is current value", this._currentValue);
 
     // Create the "Choose Files" button
     this._chooseFileButton = document.createElement("button");
@@ -137,7 +141,7 @@ export class MultipleFileUpload
         this.handleFiles(Array.from(droppedFiles), this._fileInput);
       }
     });
-
+  
     // Handle file selection from the file input
     this._fileInput.addEventListener("change", async () => {
       const selectedFiles = this._fileInput.files;
@@ -159,18 +163,18 @@ export class MultipleFileUpload
 
   // Handle selected or dropped files
   private async handleFiles(
-    files: File[],
+    files: any[],
     fileInput: HTMLInputElement
   ): Promise<void> {
     let invalidFileSelected = false;
     let maxFilesExceeded = false;
     let filesToAdd = files;
-
+    console.log(this._files);
     if (this._fileCount + filesToAdd.length > this._maxFiles) {
       maxFilesExceeded = true;
       filesToAdd = filesToAdd.slice(0, this._maxFiles - this._fileCount);
     }
-    const fragment = document.createDocumentFragment();
+   this.fragment = document.createDocumentFragment();
     for (const file of filesToAdd) {
       if (this.isValidFile(file)) {
         const { base64Content, blobUrl, size } =
@@ -182,12 +186,14 @@ export class MultipleFileUpload
           size,
         });
         this._fileCount++;
-        this.addFileDisplay(fragment, file, blobUrl, size);
+        this.addFileDisplay(this.fragment, file, blobUrl, size);
       } else {
         invalidFileSelected = true;
       }
     }
-    this._fileNamesContainer.appendChild(fragment);
+
+    
+    this._fileNamesContainer.appendChild(this.fragment);
     if (invalidFileSelected) {
       this.showError("Please select only PDF files.");
     } else if (maxFilesExceeded) {
@@ -216,12 +222,13 @@ export class MultipleFileUpload
   }
   private addFileDisplay(
     container: DocumentFragment,
-    file: File,
+    file: any,
     blobUrl: string,
     size: number
   ): void {
-    const fileDisplay = document.createElement("div");
-    fileDisplay.className = "file-display";
+    console.log("Files empty",file);
+    this.fileDisplay = document.createElement("div");
+    this.fileDisplay.className = "file-display";
     const fileNameFileSizeContainer = document.createElement("div");
     fileNameFileSizeContainer.className = "fileNameFileSizeContainer";
     const fileName = document.createElement("a");
@@ -268,7 +275,7 @@ export class MultipleFileUpload
     ActionSection.appendChild(download);
     ActionSection.appendChild(removeButton);
     removeButton.addEventListener("click", () => {
-      fileDisplay.remove();
+      this.fileDisplay.remove();
       this._files = this._files.filter((f) => f.name !== file.name);
       this._fileCount--;
 
@@ -291,8 +298,8 @@ export class MultipleFileUpload
     listContainer.appendChild(detailsSection);
     listContainer.appendChild(ActionSection);
     // listContainer.appendChild(progressWrapperContainer)
-    fileDisplay.appendChild(listContainer);
-    this._fileNamesContainer.appendChild(fileDisplay);
+    this.fileDisplay.appendChild(listContainer);
+    this._fileNamesContainer.appendChild(this.fileDisplay);
     this.mainContainer.appendChild(this._fileNamesContainer);
   }
 
@@ -393,19 +400,38 @@ export class MultipleFileUpload
     updateFileSupport(context.parameters.pptFileFormateActive?.raw, [".ppt", ".pptx"]);
     updateFileSupport(context.parameters.excelFileFormateActive?.raw, [".xls", ".xlsx"]);
     
+    console.log('constants' ,context.parameters.resetFiles.raw && !this.resetFiles);
+    if (context.parameters.resetFiles.raw && !this.resetFiles) {
+      // Mark as processed and reset the files
+      const fileDisplays = document.querySelectorAll(".file-display");
+      fileDisplays.forEach((fileDisplay) => fileDisplay.remove());
+      this._files = [];
+      this._fileCount = 0;
 
-   
+      // Optionally, update any state related to the file upload (e.g., disable buttons)
+      this.updateChooseFileButtonState();
+
+      // Notify that the output has changed
+      this._notifyOutputChanged();
+
+      // Mark that reset has been processed
+      this.resetFiles = true;
+  }
+
+  // Reset the resetFiles flag for the next toggle
+  if (!context.parameters.resetFiles.raw) {
+      this.resetFiles = false;
+  }
   }
   public getOutputs(): IOutputs {
     return {
-      // dropdownValue: this._currentValue,
       fileCount: this._fileCount,
       files: JSON.stringify(this._files),
+      resetFiles: this.resetFiles ? true : false, 
     };
   }
 
   public destroy(): void {
-    this._dropdown.removeEventListener("change", () => {});
     this._fileSections.forEach((section) =>
       this._container.removeChild(section)
     );
